@@ -1,0 +1,44 @@
+version: "3"
+
+services:
+  node-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    entrypoint: wait-for db:3306 -t 40 -- node src/index.mjs
+    volumes:
+      - .:/usr/src/app
+    networks:
+      - app-net
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+
+  proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile.proxy
+    ports:
+      - "8080:80"
+    networks:
+      - app-net
+
+  db:
+    image: mysql:5.7
+    command: --innodb-use-native-aio=0
+    restart: always
+    tty: true
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=node-db
+      - MYSQL_USER=alessandro
+      - MYSQL_PASSWORD=123456
+    volumes:
+      - ./db-data:/var/lib/mysql
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: bridge
