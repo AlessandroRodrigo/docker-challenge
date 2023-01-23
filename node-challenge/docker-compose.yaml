@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile.node
     entrypoint: wait-for db:3306 -t 40 -- node src/index.mjs
     volumes:
-      - .:/usr/src/app
+      - node-app-volume:/usr/src/app
     networks:
       - app-net
     ports:
@@ -19,10 +19,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.proxy
+    command: wait-for node-app:3000 -t 40 -- nginx -g "daemon off;"
     ports:
       - "8080:80"
     networks:
       - app-net
+    depends_on:
+      - node-app
 
   db:
     image: mysql:5.7
@@ -42,3 +45,6 @@ services:
 networks:
   app-net:
     driver: bridge
+
+volumes:
+  node-app-volume: {}
